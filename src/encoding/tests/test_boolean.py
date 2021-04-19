@@ -59,7 +59,7 @@ class TestGeneralTest(TestCase):
         self.labelling = create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value)
 
     def test_header(self):
-        df = boolean(self.log, self.event_names, self.labelling, self.encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, self.encoding)
         names = ['register request', 'examine casually', 'check ticket', 'decide',
                  'reinitiate request', 'examine thoroughly',
                  'reject request', 'trace_id', 'label', 'elapsed_time']
@@ -67,7 +67,7 @@ class TestGeneralTest(TestCase):
             self.assertIn(name, df.columns.values.tolist())
 
     def test_prefix1(self):
-        df = boolean(self.log, self.event_names, self.labelling, self.encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, self.encoding)
 
         self.assertEqual(df.shape, (2, 10))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -81,7 +81,7 @@ class TestGeneralTest(TestCase):
 
     def test_prefix1_no_label(self):
         labelling = create_test_labelling(label_type=LabelTypes.NO_LABEL.value)
-        df = boolean(self.log, self.event_names, labelling, self.encoding)
+        df = boolean(self.log, self.log, self.event_names, labelling, self.encoding)
 
         self.assertEqual(df.shape, (2, 8))
         self.assertNotIn('label', df.columns.values.tolist())
@@ -92,7 +92,7 @@ class TestGeneralTest(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=1
         )
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (2, 9))
         self.assertNotIn('elapsed_time', df.columns.values.tolist())
@@ -103,7 +103,7 @@ class TestGeneralTest(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=2)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (2, 10))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -122,7 +122,7 @@ class TestGeneralTest(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=5)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (2, 10))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -135,7 +135,7 @@ class TestGeneralTest(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=10)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (1, 10))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -149,7 +149,7 @@ class TestGeneralTest(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=10,
             padding=True)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (2, 10))
         row1 = df[df.trace_id == '4'].iloc[0]
@@ -160,7 +160,7 @@ class TestGeneralTest(TestCase):
                                         prefix_length=10,
                                         add_elapsed_time=True,
                                         task_generation_type=ALL_IN_ONE)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (10, 10))
         row1 = df[df.trace_id == '5'].iloc[9]
@@ -174,7 +174,7 @@ class TestGeneralTest(TestCase):
                                         add_elapsed_time=True,
                                         padding=True,
                                         task_generation_type=ALL_IN_ONE)
-        df = boolean(self.log, self.event_names, self.labelling, encoding)
+        df = boolean(self.log, self.log, self.event_names, self.labelling, encoding)
 
         self.assertEqual(df.shape, (15, 10))
         row1 = df[df.trace_id == '4'].iloc[4]

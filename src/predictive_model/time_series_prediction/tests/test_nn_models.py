@@ -49,8 +49,8 @@ class TestRNNTimeSeriesPredictor(TestCase):
         labelling = create_test_labelling(label_type=LabelTypes.DURATION.value,
                                           threshold_type=ThresholdTypes.THRESHOLD_MEAN.value)
 
-        train_df = simple_index(self.train_log, labelling, encoding)
-        test_df = simple_index(self.test_log, labelling, encoding)
+        train_df = simple_index(self.train_log, self.test_log, labelling, encoding)
+        test_df = simple_index(self.test_log, self.train_log, labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
 
@@ -68,8 +68,8 @@ class TestRNNTimeSeriesPredictor(TestCase):
         labelling = create_test_labelling(label_type=LabelTypes.DURATION.value,
                                           threshold_type=ThresholdTypes.THRESHOLD_MEAN.value)
 
-        train_df = complex(self.train_log, labelling, encoding, self.train_add_col)
-        test_df = complex(self.test_log, labelling, encoding, self.test_add_col)
+        train_df = complex(self.train_log, self.test_log, labelling, encoding, self.train_add_col)
+        test_df = complex(self.test_log, self.train_log, labelling, encoding, self.test_add_col)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
 

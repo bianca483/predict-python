@@ -4,6 +4,7 @@ import pandas as pd
 from pandas import DataFrame
 from pm4py.objects.log.log import Trace, EventLog
 
+from src.utils.trace_attibutes import get_prefix_length, get_max_prefix_length
 from src.encoding.encoder import PREFIX_
 from src.encoding.models import Encoding, TaskGenerationTypes
 from src.encoding.simple_index import compute_label_columns, add_labels, get_intercase_attributes
@@ -12,36 +13,38 @@ from src.labelling.models import Labelling
 ATTRIBUTE_CLASSIFIER = None
 
 
-def complex(log: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict) -> DataFrame:
-    return _encode_complex_latest(log, labelling, encoding, additional_columns, _columns_complex, _data_complex)
+def complex(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict) -> DataFrame:
+    return _encode_complex_latest(log, log2, labelling, encoding, additional_columns, _columns_complex, _data_complex)
 
 
-def last_payload(log: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict) -> DataFrame:
-    return _encode_complex_latest(log, labelling, encoding, additional_columns, _columns_last_payload,
+def last_payload(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict) -> DataFrame:
+    return _encode_complex_latest(log, log2, labelling, encoding, additional_columns, _columns_last_payload,
                                   _data_last_payload)
 
 
-def _encode_complex_latest(log: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict,
+def _encode_complex_latest(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict,
                            column_fun: Callable, data_fun: Callable) -> DataFrame:
-    columns = column_fun(encoding.prefix_length, additional_columns)
+    max_prefix_length = get_max_prefix_length(log, log2, encoding.prefix_length)
+    columns = column_fun(max_prefix_length, additional_columns)
     normal_columns_number = len(columns)
     columns = compute_label_columns(columns, encoding, labelling)
     encoded_data = []
 
     kwargs = get_intercase_attributes(log, encoding)
     for trace in log:
-        if len(trace) <= encoding.prefix_length - 1 and not encoding.padding:
+        prefix_length = get_prefix_length(len(trace), encoding.prefix_length)
+        if len(trace) <= prefix_length - 1 and not encoding.padding:
             # trace too short and no zero padding
             continue
         if encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
-            for i in range(1, min(encoding.prefix_length + 1, len(trace) + 1)):
+            for i in range(1, min(prefix_length + 1, len(trace) + 1)):
                 encoded_data.append(
                     _trace_to_row(trace, encoding, labelling, i, data_fun, normal_columns_number,
                                   additional_columns=additional_columns,
                                   atr_classifier=labelling.attribute_name, **kwargs))
         else:
             encoded_data.append(
-                _trace_to_row(trace, encoding, labelling, encoding.prefix_length, data_fun, normal_columns_number,
+                _trace_to_row(trace, encoding, labelling, prefix_length, data_fun, normal_columns_number,
                               additional_columns=additional_columns,
                               atr_classifier=labelling.attribute_name, **kwargs))
     return pd.DataFrame(columns=columns, data=encoded_data)

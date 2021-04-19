@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 from pm4py.objects.log.log import Trace, EventLog
 
+from src.utils.trace_attibutes import get_prefix_length, get_max_prefix_length
 from src.encoding.encoder import PREFIX_
 from src.encoding.models import Encoding, TaskGenerationTypes
 from src.labelling.common import compute_label_columns, get_intercase_attributes, add_labels
@@ -10,22 +11,24 @@ from src.labelling.models import Labelling
 ATTRIBUTE_CLASSIFIER = None
 
 
-def simple_index(log: EventLog, labelling: Labelling, encoding: Encoding) -> DataFrame:
-    columns = _compute_columns(encoding.prefix_length)
+def simple_index(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding) -> DataFrame:
+    max_prefix_length = get_max_prefix_length(log, log2, encoding.prefix_length)
+    columns = _compute_columns(int(max_prefix_length))
     normal_columns_number = len(columns)
     columns = compute_label_columns(columns, encoding, labelling)
     encoded_data = []
     kwargs = get_intercase_attributes(log, encoding)
     for trace in log:
-        if len(trace) <= encoding.prefix_length - 1 and not encoding.padding:
+        prefix_length = get_prefix_length(len(trace), encoding.prefix_length)
+        if len(trace) <= prefix_length - 1 and not encoding.padding:
             # trace too short and no zero padding
             continue
         if encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
-            for event_index in range(1, min(encoding.prefix_length + 1, len(trace) + 1)):
+            for event_index in range(1, min(prefix_length + 1, len(trace) + 1)):
                 encoded_data.append(add_trace_row(trace, encoding, labelling, event_index, normal_columns_number,
                                                   labelling.attribute_name, **kwargs))
         else:
-            encoded_data.append(add_trace_row(trace, encoding, labelling, encoding.prefix_length, normal_columns_number,
+            encoded_data.append(add_trace_row(trace, encoding, labelling, prefix_length, normal_columns_number,
                                               labelling.attribute_name, **kwargs))
 
     return pd.DataFrame(columns=columns, data=encoded_data)

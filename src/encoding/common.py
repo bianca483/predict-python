@@ -26,10 +26,10 @@ from ..utils.django_orm import duplicate_orm_row
 logger = logging.getLogger(__name__)
 
 
-def encode_label_logs(training_log: EventLog, test_log: EventLog, job: Job, additional_columns=None, encode=True):
+def encode_label_logs(train_log: EventLog, test_log: EventLog, job: Job, additional_columns=None, encode=True):
     logger.info('\tDataset not found in cache, building..')
-    training_log, cols = _eventlog_to_dataframe(training_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=None)
-    test_log, _ = _eventlog_to_dataframe(test_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=cols)
+    training_log, cols = _eventlog_to_dataframe(train_log, test_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=None)
+    test_log, _ = _eventlog_to_dataframe(test_log, train_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=cols)
 
     labelling = job.labelling
     if (labelling.threshold_type in [ThresholdTypes.THRESHOLD_MEAN.value, ThresholdTypes.THRESHOLD_CUSTOM.value]) and (
@@ -60,23 +60,23 @@ def encode_label_logs(training_log: EventLog, test_log: EventLog, job: Job, addi
     return training_log, test_log
 
 
-def _eventlog_to_dataframe(log: EventLog, encoding: Encoding, labelling: Labelling, additional_columns=None, cols=None):
-    if encoding.prefix_length < 1:
+def _eventlog_to_dataframe(log: EventLog, log2: EventLog, encoding: Encoding, labelling: Labelling, additional_columns=None, cols=None):
+    if encoding.prefix_length == 0:
         raise ValueError("Prefix length must be greater than 1")
     if encoding.value_encoding == ValueEncodings.SIMPLE_INDEX.value:
-        run_df = simple_index(log, labelling, encoding)
+        run_df = simple_index(log, log2, labelling, encoding)
     elif encoding.value_encoding == ValueEncodings.BOOLEAN.value:
         if cols is None:
             cols = unique_events(log)
-        run_df = boolean(log, cols, labelling, encoding)
+        run_df = boolean(log, log2, cols, labelling, encoding)
     elif encoding.value_encoding == ValueEncodings.FREQUENCY.value:
         if cols is None:
             cols = unique_events(log)
-        run_df = frequency(log, cols, labelling, encoding)
+        run_df = frequency(log, log2, cols, labelling, encoding)
     elif encoding.value_encoding == ValueEncodings.COMPLEX.value:
-        run_df = complex(log, labelling, encoding, additional_columns)
+        run_df = complex(log, log2, labelling, encoding, additional_columns)
     elif encoding.value_encoding == ValueEncodings.LAST_PAYLOAD.value:
-        run_df = last_payload(log, labelling, encoding, additional_columns)
+        run_df = last_payload(log, log2, labelling, encoding, additional_columns)
     # elif encoding.value_encoding == ValueEncodings.SEQUENCES.value: #TODO JONAS
     #     run_df = sequences(log, labelling, encoding, additional_columns)
     elif encoding.value_encoding == ValueEncodings.DECLARE.value:

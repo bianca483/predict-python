@@ -52,8 +52,8 @@ class TestNNClassifier(TestCase):
         labelling = create_test_labelling(label_type=LabelTypes.DURATION.value,
                                           threshold_type=ThresholdTypes.THRESHOLD_MEAN.value)
 
-        train_df = simple_index(self.train_log, labelling, encoding)
-        test_df = simple_index(self.test_log, labelling, encoding)
+        train_df = simple_index(self.train_log, self.test_log, labelling, encoding)
+        test_df = simple_index(self.test_log, self.train_log, labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
         targets_df = targets_df.values.ravel()
@@ -72,8 +72,8 @@ class TestNNClassifier(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.SIMPLE_INDEX.value, prefix_length=2, padding=True)
         labelling = create_test_labelling(label_type=LabelTypes.NEXT_ACTIVITY.value)
 
-        train_df = simple_index(self.train_log, labelling, encoding)
-        test_df = simple_index(self.test_log, labelling, encoding)
+        train_df = simple_index(self.train_log, self.test_log, labelling, encoding)
+        test_df = simple_index(self.test_log, self.train_log, labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
         targets_df = targets_df.values.ravel()
