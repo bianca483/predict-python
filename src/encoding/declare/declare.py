@@ -4,6 +4,7 @@ from itertools import groupby
 import pandas as pd
 from pm4py.objects.log.log import Trace
 
+from src.utils.trace_attibutes import get_prefix_length
 from src.encoding.declare.declare_mining import filter_candidates_by_support, generate_train_candidate_constraints, \
     transform_results_to_numpy
 from src.encoding.declare.declare_templates import template_sizes
@@ -37,7 +38,7 @@ def declare_encoding(log, labelling, encoding, additional_columns, cols=None): #
     candidate_threshold = 0.1
 
     #apply prefix
-    log = [Trace(trace[:encoding.prefix_length], attributes=trace.attributes) for trace in log]
+    log = [Trace(trace[:get_prefix_length(len(trace), encoding.prefix_length)], attributes=trace.attributes) for trace in log]
 
     # Read into suitable data structure
     transformed_log = xes_to_positional(log)

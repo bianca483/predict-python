@@ -60,6 +60,7 @@ class JobModelTest(TestCase):
         })
 
     def test_prediction_task(self):
+        print("test_prediction_task")
         job = create_test_job()
         prediction_task(job.id)
 

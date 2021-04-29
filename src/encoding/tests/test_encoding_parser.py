@@ -39,8 +39,8 @@ class TestEncodingParser(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.SIMPLE_INDEX.value, prefix_length=3, padding=True)
 
         parser = self._get_parser(encoding=ValueEncodings.SIMPLE_INDEX.value)
-        train_df = simple_index(self.train_log, self.labelling, encoding)
-        test_df = simple_index(self.test_log, self.labelling, encoding)
+        train_df = simple_index(self.train_log, self.test_log, self.labelling, encoding)
+        test_df = simple_index(self.test_log, self.train_log, self.labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
         test_df, _ = self._drop_columns_and_split(test_df)
@@ -54,8 +54,8 @@ class TestEncodingParser(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.BOOLEAN.value, prefix_length=2, padding=True)
 
         parser = self._get_parser(encoding=ValueEncodings.BOOLEAN.value)
-        train_df = boolean(self.train_log, self.train_event_names, self.labelling, encoding)
-        test_df = boolean(self.test_log, self.test_event_names, self.labelling, encoding)
+        train_df = boolean(self.train_log, self.test_log, self.train_event_names, self.labelling, encoding)
+        test_df = boolean(self.test_log, self.train_log, self.test_event_names, self.labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
 
@@ -69,8 +69,8 @@ class TestEncodingParser(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.FREQUENCY.value, prefix_length=2, padding=True)
 
         parser = self._get_parser(encoding=ValueEncodings.FREQUENCY.value)
-        train_df = frequency(self.train_log, self.train_event_names, self.labelling, encoding)
-        test_df = frequency(self.test_log, self.test_event_names, self.labelling, encoding)
+        train_df = frequency(self.train_log, self.test_log, self.train_event_names, self.labelling, encoding)
+        test_df = frequency(self.test_log, self.train_log, self.test_event_names, self.labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
 
@@ -84,8 +84,8 @@ class TestEncodingParser(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.COMPLEX.value, prefix_length=2, padding=True)
 
         parser = self._get_parser(encoding=ValueEncodings.COMPLEX.value)
-        train_df = complex(self.train_log, self.labelling, encoding, self.train_add_col)
-        test_df = complex(self.test_log, self.labelling, encoding, self.train_add_col)
+        train_df = complex(self.train_log, self.test_log, self.labelling, encoding, self.train_add_col)
+        test_df = complex(self.test_log, self.train_log, self.labelling, encoding, self.train_add_col)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
 

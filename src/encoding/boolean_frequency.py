@@ -3,20 +3,21 @@ import pandas as pd
 from pandas import DataFrame
 from pm4py.objects.log.log import Trace, EventLog
 
+from src.utils.trace_attibutes import get_prefix_length
 from src.encoding.models import Encoding, TaskGenerationTypes, ValueEncodings
 from src.encoding.simple_index import compute_label_columns, add_labels, get_intercase_attributes
 from src.labelling.models import Labelling
 
 
-def boolean(log: EventLog, event_names: list, label: Labelling, encoding: Encoding) -> DataFrame:
-    return _encode_boolean_frequency(log, event_names, label, encoding)
+def boolean(log: EventLog, log2: EventLog, event_names: list, label: Labelling, encoding: Encoding) -> DataFrame:
+    return _encode_boolean_frequency(log, log2, event_names, label, encoding)
 
 
-def frequency(log: EventLog, event_names: list, label: Labelling, encoding: Encoding) -> DataFrame:
-    return _encode_boolean_frequency(log, event_names, label, encoding)
+def frequency(log: EventLog, log2: EventLog, event_names: list, label: Labelling, encoding: Encoding) -> DataFrame:
+    return _encode_boolean_frequency(log, log2, event_names, label, encoding)
 
 
-def _encode_boolean_frequency(log: EventLog, event_names: list, labelling: Labelling,
+def _encode_boolean_frequency(log: EventLog, log2: EventLog, event_names: list, labelling: Labelling,
                               encoding: Encoding) -> DataFrame:
     """Encodes the log by boolean or frequency
 
@@ -28,18 +29,19 @@ def _encode_boolean_frequency(log: EventLog, event_names: list, labelling: Label
 
     kwargs = get_intercase_attributes(log, encoding)
     for trace in log:
-        if len(trace) <= encoding.prefix_length - 1 and not encoding.padding:
+        prefix_length = get_prefix_length(len(trace), encoding.prefix_length)
+        if len(trace) <= prefix_length - 1 and not encoding.padding:
             # trace too short and no zero padding
             continue
         if encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
-            for i in range(1, min(encoding.prefix_length + 1, len(trace) + 1)):
+            for i in range(1, min(prefix_length + 1, len(trace) + 1)):
                 encoded_data.append(
                     _trace_to_row(trace, encoding, i, labelling, event_names=event_names,
                                   atr_classifier=labelling.attribute_name,
                                   **kwargs))
         else:
             encoded_data.append(
-                _trace_to_row(trace, encoding, encoding.prefix_length, labelling, event_names=event_names,
+                _trace_to_row(trace, encoding, prefix_length, labelling, event_names=event_names,
                               atr_classifier=labelling.attribute_name, **kwargs))
 
     return pd.DataFrame(columns=columns, data=encoded_data)

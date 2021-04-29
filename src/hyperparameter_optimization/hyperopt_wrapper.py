@@ -4,6 +4,7 @@ hyperopt methods and functionalities
 import logging
 import time
 from datetime import timedelta
+import pandas as pd
 
 import hyperopt
 from hyperopt import Trials, STATUS_OK, fmin, STATUS_FAIL
@@ -49,7 +50,9 @@ def _run_hyperoptimisation(space, algorithm_suggest, max_evaluations, trials):
 
 def _test_best_candidate(current_best, job_labelling_type, job_type):
     if job_type == PredictiveModels.CLASSIFICATION.value:
-        return classification_test(current_best['model_split'], test_df.drop(['trace_id'], 1),
+        return classification_test(remaining_test.drop(['trace_id'],1), current_best['model_split'], test_df.drop([
+            'trace_id'], 1),
+                                   test_df['trace_id'],
                      evaluation=True, is_binary_classifier=_check_is_binary_classifier(job_labelling_type))
     elif job_type == PredictiveModels.REGRESSION.value:
         return regression_test(current_best['model_split'], test_df.drop(['trace_id'], 1)), 0
@@ -72,6 +75,7 @@ def run_hyperopt(job, original_training_df, original_test_df):
             job.hyperparameter_optimizer.optimization_method.lower()
         ).algorithm_type
     ]
+
 
     _run_hyperoptimisation(space, algorithm.suggest, max_evaluations, trials)
 
@@ -99,9 +103,12 @@ def calculate_hyperopt(job: Job) -> (dict, dict, dict):
         ).performance_metric) #Todo: WHY DO I NEED TO GET HYPEROPT?
     )
 
-    global train_df, validation_df, test_df, global_job
+    global train_df, validation_df, test_df, global_job,remaining_train, remaining_test
+
     global_job = job
-    train_df, test_df = get_encoded_logs(job)
+    train_df,remaining_train, test_df,remaining_test = get_encoded_logs(job)
+
+    print("_retrieve")
     train_df, validation_df, test_df = _retrieve_train_validate_test(train_df, test_df)
 
     train_start_time = time.time()
@@ -113,14 +120,17 @@ def calculate_hyperopt(job: Job) -> (dict, dict, dict):
         ).max_evaluations #Todo: WHY DO I NEED TO GET HYPEROPT?
     trials = Trials()
 
+
     algorithm = algorithm = OPTIMISATION_ALGORITHM[
         job.hyperparameter_optimizer.__getattribute__(
             job.hyperparameter_optimizer.optimization_method.lower()
         ).algorithm_type
     ]
+
     _run_hyperoptimisation(space, algorithm.suggest, max_evaluations, trials)
 
     best_candidate = trials.best_trial['result']
+
 
     job.predictive_model = PredictiveModel.objects.filter(pk=best_candidate['predictive_model_id'])[0]
     job.predictive_model.save()
@@ -129,6 +139,7 @@ def calculate_hyperopt(job: Job) -> (dict, dict, dict):
     best_candidate['results']['elapsed_time'] = timedelta(seconds=time.time() - train_start_time)  # todo find better place for this
     job.evaluation.elapsed_time = best_candidate['results']['elapsed_time']
     job.evaluation.save()
+
 
     results_df, auc = _test_best_candidate(best_candidate, job.labelling.type, job.predictive_model.predictive_model)
     if job.predictive_model.predictive_model == PredictiveModels.CLASSIFICATION.value:

@@ -107,7 +107,7 @@ class TestGeneralTest(TestCase):
             prefix_length=1)
 
     def test_header(self):
-        df = simple_index(self.log, self.labelling, self.encoding)
+        df = simple_index(self.log, self.log, self.labelling, self.encoding)
 
         self.assertIn("trace_id", df.columns.values)
         self.assertIn("label", df.columns.values)
@@ -115,7 +115,7 @@ class TestGeneralTest(TestCase):
         self.assertIn("prefix_1", df.columns.values)
 
     def test_prefix1(self):
-        df = simple_index(self.log, self.labelling, self.encoding)
+        df = simple_index(self.log, self.log, self.labelling, self.encoding)
 
         self.assertEqual(df.shape, (2, 4))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -124,7 +124,7 @@ class TestGeneralTest(TestCase):
         self.assertListEqual(['4', 'register request', 0.0, 520920.0], row2.values.tolist())
 
     def test_prefix1_no_label(self):
-        df = simple_index(self.log, create_test_labelling(label_type=LabelTypes.NO_LABEL.value), self.encoding)
+        df = simple_index(self.log, self.log, create_test_labelling(label_type=LabelTypes.NO_LABEL.value), self.encoding)
 
         self.assertEqual(df.shape, (2, 2))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -138,7 +138,7 @@ class TestGeneralTest(TestCase):
             value_encoding=ValueEncodings.FREQUENCY.value,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=1)
-        df = simple_index(self.log, label, encoding)
+        df = simple_index(self.log, self.log, label, encoding)
 
         self.assertEqual(df.shape, (2, 3))
         row1 = df[df.trace_id == '5'].iloc[0]
@@ -147,7 +147,7 @@ class TestGeneralTest(TestCase):
         self.assertListEqual(['4', 'register request', 520920.0], row2.values.tolist())
 
     def test_prefix2(self):
-        df = simple_index(self.log, self.labelling, create_test_encoding(
+        df = simple_index(self.log, self.log, self.labelling, create_test_encoding(
             value_encoding=ValueEncodings.FREQUENCY.value,
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
@@ -160,7 +160,7 @@ class TestGeneralTest(TestCase):
         self.assertListEqual(['4', 'register request', 'check ticket', 75840.0, 445080.0], row2.values.tolist())
 
     def test_prefix5(self):
-        df = simple_index(self.log, self.labelling, create_test_encoding(
+        df = simple_index(self.log, self.log, self.labelling, create_test_encoding(
             value_encoding=ValueEncodings.FREQUENCY.value,
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
@@ -174,7 +174,7 @@ class TestGeneralTest(TestCase):
         self.assertFalse(df.isnull().values.any())
 
     def test_prefix10(self):
-        df = simple_index(self.log, self.labelling, create_test_encoding(
+        df = simple_index(self.log, self.log, self.labelling, create_test_encoding(
             value_encoding=ValueEncodings.FREQUENCY.value,
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
@@ -188,7 +188,7 @@ class TestGeneralTest(TestCase):
              280200.0], row1.values.tolist())
 
     def test_prefix10_padding(self):
-        df = simple_index(self.log, self.labelling, create_test_encoding(
+        df = simple_index(self.log, self.log, self.labelling, create_test_encoding(
             value_encoding=ValueEncodings.FREQUENCY.value,
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
@@ -207,7 +207,7 @@ class TestGeneralTest(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             prefix_length=10)
-        df = simple_index(self.log, self.labelling, encoding)
+        df = simple_index(self.log, self.log, self.labelling, encoding)
 
         self.assertEqual(df.shape, (10, 13))
         row1 = df[df.trace_id == '5'].iloc[9]
@@ -224,7 +224,7 @@ class TestGeneralTest(TestCase):
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             prefix_length=10,
             padding=True)
-        df = simple_index(self.log, self.labelling, encoding)
+        df = simple_index(self.log, self.log, self.labelling, encoding)
 
         self.assertEqual(df.shape, (15, 13))
         row1 = df[df.trace_id == '4'].iloc[4]
@@ -241,6 +241,7 @@ class TestGeneralTest(TestCase):
             prefix_length=12,
             padding=True)
         df = simple_index(
+            get_log(create_test_log(log_path=general_example_filepath, log_name=general_example_filename)),
             get_log(create_test_log(log_path=general_example_filepath, log_name=general_example_filename)),
             create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value), encoding)
 

@@ -29,7 +29,7 @@ class Complex(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=2)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual((2, 15), df.shape)
         headers = ['trace_id', 'AMOUNT', 'creator', 'prefix_1', 'Activity_1', 'Costs_1', 'Resource_1',
@@ -38,7 +38,7 @@ class Complex(TestCase):
         self.assertListEqual(headers, df.columns.values.tolist())
 
     def test_prefix1(self):
-        df = complex(self.log, self.labelling, self.encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, self.encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -51,7 +51,7 @@ class Complex(TestCase):
 
     def test_prefix1_no_label(self):
         labelling = create_test_labelling(label_type=LabelTypes.NO_LABEL.value)
-        df = complex(self.log, labelling, self.encoding, self.add_col)
+        df = complex(self.log, self.log, labelling, self.encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -67,7 +67,7 @@ class Complex(TestCase):
             value_encoding=ValueEncodings.COMPLEX.value,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=1)
-        df = complex(self.log, LabelContainer(), encoding, self.add_col)
+        df = complex(self.log, self.log, LabelContainer(), encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -84,7 +84,7 @@ class Complex(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=2)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -102,7 +102,7 @@ class Complex(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=5)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (2, 30))
         self.assertFalse(df.isnull().values.any())
@@ -113,7 +113,7 @@ class Complex(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=10)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (1, 55))
         self.assertFalse(df.isnull().values.any())
@@ -125,7 +125,7 @@ class Complex(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=10,
             padding=True)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (2, 55))
         self.assertFalse(df.isnull().values.any())
@@ -137,7 +137,7 @@ class Complex(TestCase):
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             prefix_length=10
         )
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (10, 55))
         self.assertFalse(df.isnull().values.any())
@@ -149,7 +149,7 @@ class Complex(TestCase):
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             prefix_length=10,
             padding=True)
-        df = complex(self.log, self.labelling, encoding, self.add_col)
+        df = complex(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (15, 55))
         self.assertFalse(df.isnull().values.any())

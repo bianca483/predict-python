@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 @job("default", timeout='100h')
 def prediction_task(job_id, do_publish_result=True):
+    print("prediction_task")
     logger.info("Start prediction task ID {}".format(job_id))
     job = Job.objects.get(id=job_id)
 
@@ -31,6 +32,7 @@ def prediction_task(job_id, do_publish_result=True):
             job_start_time = time.time()
             if job.hyperparameter_optimizer is not None and \
                 job.hyperparameter_optimizer.optimization_method != HyperparameterOptimizationMethods.NONE.value:
+
                 result, _, model_split = calculate_hyperopt(job)
             else:
                 result, model_split = calculate(job)

@@ -28,7 +28,7 @@ class TestLastPayload(TestCase):
             add_elapsed_time=True,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=2)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual((2, 9), df.shape)
         headers = ['trace_id', 'prefix_1', 'prefix_2', 'Activity_2', 'Costs_2',
@@ -36,7 +36,7 @@ class TestLastPayload(TestCase):
         self.assertListEqual(headers, df.columns.values.tolist())
 
     def test_prefix1(self):
-        df = last_payload(self.log, self.labelling, self.encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, self.encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -46,7 +46,7 @@ class TestLastPayload(TestCase):
                              ["4", 'register request', "register request", "50", 'Pete', "Pete", 0.0, 520920.0])
 
     def test_prefix1_no_label(self):
-        df = last_payload(self.log, create_test_labelling(label_type=LabelTypes.NO_LABEL.value), self.encoding,
+        df = last_payload(self.log, self.log, create_test_labelling(label_type=LabelTypes.NO_LABEL.value), self.encoding,
                           self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
@@ -61,7 +61,7 @@ class TestLastPayload(TestCase):
             value_encoding=ValueEncodings.LAST_PAYLOAD.value,
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             prefix_length=1)
-        df = last_payload(self.log, create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value), encoding,
+        df = last_payload(self.log, self.log, create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value), encoding,
                           self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
@@ -77,7 +77,7 @@ class TestLastPayload(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             add_elapsed_time=True,
             prefix_length=2)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         row1 = df[(df.trace_id == '5')].iloc[0].tolist()
         self.assertListEqual(row1,
@@ -94,7 +94,7 @@ class TestLastPayload(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             add_elapsed_time=True,
             prefix_length=5)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (2, 12))
         self.assertFalse(df.isnull().values.any())
@@ -105,7 +105,7 @@ class TestLastPayload(TestCase):
             task_generation_type=TaskGenerationTypes.ONLY_THIS.value,
             add_elapsed_time=True,
             prefix_length=10)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (1, 17))
         self.assertFalse(df.isnull().values.any())
@@ -117,7 +117,7 @@ class TestLastPayload(TestCase):
             add_elapsed_time=True,
             prefix_length=10,
             padding=True)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (2, 17))
         self.assertFalse(df.isnull().values.any())
@@ -128,7 +128,7 @@ class TestLastPayload(TestCase):
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             add_elapsed_time=True,
             prefix_length=10)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (10, 17))
         self.assertFalse(df.isnull().values.any())
@@ -139,7 +139,7 @@ class TestLastPayload(TestCase):
             task_generation_type=TaskGenerationTypes.ALL_IN_ONE.value,
             add_elapsed_time=True,
             prefix_length=10, padding=True)
-        df = last_payload(self.log, self.labelling, encoding, self.add_col)
+        df = last_payload(self.log, self.log, self.labelling, encoding, self.add_col)
 
         self.assertEqual(df.shape, (15, 17))
         self.assertFalse(df.isnull().values.any())

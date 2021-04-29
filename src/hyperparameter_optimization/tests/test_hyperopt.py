@@ -168,6 +168,7 @@ class TestHyperoptFunctionsClassification(TestCase):
         self.assertEqual(len(trials), 5)
 
     def test_test_best_candidate_classification(self):
+        print("test_test_best_candidate_classification")
         trials = self.create_trials(self.job)
 
         results_df, auc = _test_best_candidate(trials.best_trial['result'], self.job.labelling.type,
@@ -237,6 +238,7 @@ class TestHyperoptFunctionsRegression(TestCase):
         self.assertDictEqual(best_candidate, best_trial_mae)
 
     def test_test_best_candidate_regression(self):
+        print("test_test_best_candidate_regression")
         trials = self.create_trials(self.job)
 
         results_df, auc = _test_best_candidate(trials.best_trial['result'], self.job.labelling.type,
