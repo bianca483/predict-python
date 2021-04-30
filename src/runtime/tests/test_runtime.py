@@ -86,6 +86,8 @@ class TestRuntime(TestCase):
 
     def test_replay_prediction(self):
         job = create_test_job(create_models=True)
+        #non ci passa
+
         runtime_log = create_test_log(log_name='runtime_example.xes',
                                       log_path='cache/log_cache/test_logs/runtime_test.xes')
         log = get_log(runtime_log)

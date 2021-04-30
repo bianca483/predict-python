@@ -25,13 +25,58 @@ class Encoder:
         self._init_encoder(df, encoding)
 
     def _init_encoder(self, df: DataFrame, encoding: Encoding):
+        #le = LabelEncoder()
+        #print("VALORI")
+        #print(df.values)
+
+        #print(encoding.data_encoding) #label_encoder
+        #print(DataEncodings.LABEL_ENCODER.value)#label_encoder
+        #enc = le.fit(np.unique(df.values))
+        #print("ENCODER")
+        #print(enc.classes_)
+        val = [ ]
+        for column in df:
+            l= df[column].values
+            #print(l)
+            for index,value in enumerate(l):
+                val.append(value)
+
+            #val.append(dati)
+
+        val = np.unique(val)
+        val = [str(elem)for elem in val]
+        #v = pd.DataFrame(val)
+        #print(v)
+
+        #s= sorted(pd.concat([pd.Series([str(PADDING_VALUE)]), v]))
+
+        le =LabelEncoder()
+        le.fit(val)
+        #print("CLASSI")
+        c= le.classes_
+        #print(le.classes_)
+        #print("TRASFORM")
+        #print(le.transform(c))
+
+
+
+
         for column in df:
             if column != 'trace_id':
-                if df[column].dtype != int or (df[column].dtype == int and np.any(df[column] < 0)):
+                #print(df[column])
+                if df[column].dtype != int or (df[column].dtype == int and np.any(df[column] < 0)): # quando anche un
+                    # solo valore della colonna è minore di 0
+                    # dal tipo int
                     if encoding.data_encoding == DataEncodings.LABEL_ENCODER.value:
-                        self._encoder[column] = LabelEncoder().fit(
-                            sorted(pd.concat([pd.Series([str(PADDING_VALUE)]), df[column].apply(lambda x: str(x))])))
-                        classes = self._encoder[column].classes_
+                        #passa sempre di qua
+
+
+
+                        #self._encoder[column] = LabelEncoder().fit(sorted(pd.concat([pd.Series([str(
+                        # PADDING_VALUE)]), df[column].apply(lambda x: str(x))])))
+
+                        self._encoder[column] = le
+                        classes = sorted(pd.concat([ pd.Series([ str(PADDING_VALUE) ]),df[column].apply(lambda x: str(x))]))
                         transforms = self._encoder[column].transform(classes)
                         self._label_dict[column] = dict(zip(classes, transforms))
                         self._label_dict_decoder[column] = dict(zip(transforms, classes))

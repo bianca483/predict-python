@@ -46,6 +46,9 @@ def classification(training_df: DataFrame, test_df: DataFrame, clusterer: Cluste
     train_data = _drop_columns(training_df)
     test_data = _drop_columns(test_df)
 
+    #estraggo le labels di test
+    labels_test = test_df['trace_id']
+
     # job.encoding = duplicate_orm_row(Encoding.objects.filter(pk=job.encoding.pk)[0])  # TODO: maybe here would be better an intelligent get_or_create...
     job.encoding = Encoding.objects.create(
         data_encoding=job.encoding.data_encoding,
@@ -65,9 +68,13 @@ def classification(training_df: DataFrame, test_df: DataFrame, clusterer: Cluste
     job.save()
 
     model_split = _train(train_data, _choose_classifier(job), clusterer)
+    empty_df = pd.DataFrame()
+
     results_df, auc = _test(
+        empty_df,
         model_split,
         test_data,
+        labels_test,
         evaluation=True,
         is_binary_classifier=_check_is_binary_classifier(job.labelling.type)
     )
@@ -192,7 +199,9 @@ def _update(job: Job, data: DataFrame) -> dict:
     return {ModelType.CLUSTERER.value: clusterer, ModelType.CLASSIFIER.value: models}
 
 
-def _test(model_split: dict, test_data: DataFrame, evaluation: bool, is_binary_classifier: bool) -> (DataFrame, float):
+def _test(remaining_test:DataFrame, model_split: dict, test_data: DataFrame,labels_traces, evaluation: bool,
+          is_binary_classifier: bool) -> (
+    DataFrame, float):
     clusterer = model_split[ModelType.CLUSTERER.value]
     classifier = model_split[ModelType.CLASSIFIER.value]
 
@@ -214,7 +223,16 @@ def _test(model_split: dict, test_data: DataFrame, evaluation: bool, is_binary_c
                     if hasattr(classifier[cluster], 'decision_function'):
                         scores = classifier[cluster].decision_function(cluster_test_df.drop(['label'], 1))
                     else:
+
+
                         scores = classifier[cluster].predict_proba(cluster_test_df.drop(['label'], 1))
+
+
+                        #labels del classificatore
+                        label_classes = classifier[cluster].classes_
+
+                        scores_long = scores
+
                         if np.size(scores, 1) >= 2:  # checks number of columns
                             scores = scores[:, 1]
                 except (NotImplementedError, KeyError):
@@ -222,6 +240,7 @@ def _test(model_split: dict, test_data: DataFrame, evaluation: bool, is_binary_c
                         scores = classifier[cluster].decision_function(cluster_test_df.drop(['label'], 1).values)
                     else:
                         scores = classifier[cluster].predict_proba(cluster_test_df.drop(['label'], 1).values)
+
                         try:
                             if np.size(scores, 1) >= 2:  # checks number of columns
                                 scores = scores[:, 1]
@@ -240,8 +259,148 @@ def _test(model_split: dict, test_data: DataFrame, evaluation: bool, is_binary_c
     else:
         pass  # TODO: check if AUC is ok for multiclass, otherwise implement
 
+    ########
+
+    # type(scores_long) numpy.array
+    len_scores = np.size(scores_long, 0)  # prendo la dimensione di scores_long,la lunghezza
+    index_traces = list(range(0, len_scores))  # creo una lista che va da 0 alla lunghezza di scores long
+
+
+
+    # labels_traces sono le label dei miei test data
+    labels_traces.index = index_traces  # modifico l'indice delle labels
+
+
+    # predicted= pd.Series(cluster_test_df['predicited'],index=index_traces)
+
+
+    #cambio gli indici
+    #cluster_test_df sono i dati nel test che hanno un indice diverso
+    cluster_test_df.index = index_traces  # predicited è ciò che
+    #cluster_targets_df sono i risultati della prediction
+    cluster_targets_df.index = index_traces
+
+    #estraggo gli indixi delle prob massime che ottengo
+    index_max_scores = np.argmax(scores_long,axis=1)  # index of the max prob. RICAVO GLI INDICI MASSIMI DI SCORES LONG
+
+
+    #se ho l'indice di massima prob 29, 29 in label corrisponde ad altro
+
+    #print("labels")
+    #print(label_classes)
+
+    #estraggo i giusti indici della massime probabilità
+    #label_classes sono le label che ottengo dal modello e che devo cambiare
+    label_max_index = label_classes[index_max_scores]  # right index , right labels
+
+    # retrieve the positions of the 5 bigger probabilities in scores, Ricavo le prime 5 predizioni
+
+    pos_prob_5 = position_probab_top5(scores_long)
+
+    # retreive the associated RIGHT position in labels, ricavo le giuste posizioni associate alle labels in
+    final_pos = position_labels(pos_prob_5, label_classes)
+
+    top_5 = pd.Series(final_pos, index=index_traces)
+
+    with open("/Users/biancaciuche/PycharmProjects/scores.csv", 'wb') as f:
+        np.savetxt(f, scores_long, delimiter=",")
+
+    if not (remaining_test.empty):
+        cont = [ ]
+        for index, row in remaining_test.iterrows():
+            l = remaining_test.iloc[ index ].values
+            cont.append(l)
+        remain = pd.Series(cont)
+        all_data = pd.DataFrame({'label': labels_traces, 'remainig': remain, 'top_1': label_max_index, 'top_5': top_5}, index=index_traces)
+
+
+
+    if not(remaining_test.empty):
+        precision_top1(remaining_test, all_data)
+        precision_top5(remaining_test, all_data)
+        all_data.to_csv('/Users/biancaciuche/PycharmProjects/results_1.csv')
+
     return results_df, auc
 
+def precision_top1(remaining_test,all_data):
+    TP_1 = 0
+    presence = [ ]
+    for index, row in all_data.iterrows():
+
+        if (row[ 'top_1' ] in remaining_test.iloc[ index ].values):
+            presence.append("TRUE")
+            TP_1 += 1
+        else:
+            presence.append("FALSE")
+
+    print('precision1')
+    print((TP_1) / all_data.shape[0])
+    all_data.insert(4, "Found_1", presence, True)
+    return
+
+def precision_top5(remaining_test,all_data):
+    TP_5=0
+    presence = [ ]
+    for index, row in all_data.iterrows():
+        c = 0
+        for i in row[ 'top_5' ]:
+            if (i in remaining_test.iloc[ index ].values):
+                c += 1
+
+        if c >= 1:
+            presence.append("TRUE")
+            TP_5 += c / 5
+        else:
+            presence.append("FALSE")
+
+    print('precision5')
+    print(TP_5 / all_data.shape[ 0 ])
+    all_data.insert(5, "Found_5", presence, True)
+
+
+def position_labels(pos_prob,label_classes):
+    final_pos = []
+    for i in pos_prob:
+
+        new = [] #right labels
+        for pos in i:
+            new.append(label_classes[pos])
+        final_pos.append(new)
+
+    return final_pos
+
+
+def position_probab_top5(scores):
+    #scores è l'array che contiene tutte le prob
+    L = []
+
+    for i in scores:
+        i = i.tolist()
+        #print(i)
+        top_5 = []
+        dec_list= sorted(i,reverse=True)#ordine decrescente
+        # delete duplicates
+        dec_list= list(dict.fromkeys(dec_list))[0:-1]
+
+        if dec_list[0]<=1: #se il primo elemento della riga che sto considerando è minore/uguale a 1
+            count = 0 #conto il numero di elemnti che sto considerando
+            for j in range(0,len(dec_list)):
+                if count<=5:
+                    #prendo l'elemento dec_list[j]
+
+                    #devo capire il numero di elementi nella riga i che sono uguali a dec_list[j]
+                    index_element = [t for t,x in enumerate(i) if x == dec_list[j]] #ricavo gli indici delle posizioni
+                    count += len(index_element)
+
+                    list.extend(top_5,index_element)
+                    if len(top_5)>5:
+                        top_5 = top_5[0:5]
+        # top 5 hold the index of the 5 max probabilities
+        else:
+            list.extend(top_5,i.index(dec_list[0]))
+
+        L.append(top_5)
+    return L
 
 def predict(job: Job, data: DataFrame) -> Any:
     data = data.drop(['trace_id'], 1)

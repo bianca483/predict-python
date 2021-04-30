@@ -28,8 +28,17 @@ logger = logging.getLogger(__name__)
 
 def encode_label_logs(train_log: EventLog, test_log: EventLog, job: Job, additional_columns=None, encode=True):
     logger.info('\tDataset not found in cache, building..')
-    training_log, cols = _eventlog_to_dataframe(train_log, test_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=None)
-    test_log, _ = _eventlog_to_dataframe(test_log, train_log, job.encoding, job.labelling, additional_columns=additional_columns, cols=cols)
+    training_log,train_first,train_last, cols = _eventlog_to_dataframe(train_log, test_log, job.encoding,
+                                                                       job.labelling, additional_columns=additional_columns, cols=None)
+    test_log,test_first,test_last, _ = _eventlog_to_dataframe(test_log, train_log, job.encoding, job.labelling,
+                                                            additional_columns=additional_columns, cols=cols)
+
+    training_log.to_csv('/Users/biancaciuche/PycharmProjects/train_log_NO ENCO.csv')
+
+    """print("train")
+    print(training_log.head())
+    print("test")
+    print(test_log)"""
 
     labelling = job.labelling
     if (labelling.threshold_type in [ThresholdTypes.THRESHOLD_MEAN.value, ThresholdTypes.THRESHOLD_CUSTOM.value]) and (
@@ -55,16 +64,25 @@ def encode_label_logs(train_log: EventLog, test_log: EventLog, job: Job, additio
         test_log['label'] = test_log['label'].astype(float)
 
     if encode:
-        _data_encoder_encoder(job, training_log, test_log)
+        #passa solo di qua
+        _data_encoder_encoder(job, training_log, train_first,train_last,test_log,test_first,test_last)
+    #print("ENCODING")
+    #print("test_first")
+    #print(test_first)
+    test_first.to_csv('/Users/biancaciuche/PycharmProjects/test_first.csv')
 
-    return training_log, test_log
+    #print("test_last")
+    #print(test_last)
+    test_last.to_csv('/Users/biancaciuche/PycharmProjects/test_last.csv')
+
+    return train_first,train_last,test_first,test_last
 
 
 def _eventlog_to_dataframe(log: EventLog, log2: EventLog, encoding: Encoding, labelling: Labelling, additional_columns=None, cols=None):
     if encoding.prefix_length == 0:
         raise ValueError("Prefix length must be greater than 1")
     if encoding.value_encoding == ValueEncodings.SIMPLE_INDEX.value:
-        run_df = simple_index(log, log2, labelling, encoding)
+        tot_df,first_df,last_df = simple_index(log, log2, labelling, encoding)
     elif encoding.value_encoding == ValueEncodings.BOOLEAN.value:
         if cols is None:
             cols = unique_events(log)
@@ -74,7 +92,7 @@ def _eventlog_to_dataframe(log: EventLog, log2: EventLog, encoding: Encoding, la
             cols = unique_events(log)
         run_df = frequency(log, log2, cols, labelling, encoding)
     elif encoding.value_encoding == ValueEncodings.COMPLEX.value:
-        run_df = complex(log, log2, labelling, encoding, additional_columns)
+        tot_df,first_df,last_df = complex(log, log2, labelling, encoding, additional_columns)
     elif encoding.value_encoding == ValueEncodings.LAST_PAYLOAD.value:
         run_df = last_payload(log, log2, labelling, encoding, additional_columns)
     # elif encoding.value_encoding == ValueEncodings.SEQUENCES.value: #TODO JONAS
@@ -85,10 +103,10 @@ def _eventlog_to_dataframe(log: EventLog, log2: EventLog, encoding: Encoding, la
             cols = list(run_df.columns)
     else:
         raise ValueError("Unknown value encoding method {}".format(encoding.value_encoding))
-    return run_df, cols
+    return tot_df,first_df,last_df, cols
 
 
-def _data_encoder_encoder(job: Job, training_log, test_log) -> Encoder:
+def _data_encoder_encoder(job: Job, training_log,train_first,train_last,test_log,test_first,test_last) -> Encoder:
     if job.type != JobTypes.LABELLING.value and \
        job.encoding.value_encoding != ValueEncodings.BOOLEAN.value and \
        job.predictive_model.predictive_model != PredictiveModels.TIME_SERIES_PREDICTION.value:
@@ -97,12 +115,18 @@ def _data_encoder_encoder(job: Job, training_log, test_log) -> Encoder:
         else:
             if job.predictive_model.predictive_model != PredictiveModels.TIME_SERIES_PREDICTION.value and \
                job.predictive_model.predictive_model != PredictiveModels.REGRESSION.value:
-                encoder = Encoder(training_log, job.encoding)
+                #passa solo di qua
+                encoder = Encoder(training_log.drop(['trace_id'],1), job.encoding)#inizializzo l'encoder
+                #encoder2 = Encoder(test_log.drop([ 'trace_id' ], 1), job.encoding)  # inizializzo l'encoder
             elif job.predictive_model.predictive_model == PredictiveModels.REGRESSION.value:
                 encoder = Encoder(training_log.drop('label', axis=1), job.encoding)
 
         encoder.encode(training_log, job.encoding)
+        encoder.encode(train_first, job.encoding)
+        encoder.encode(train_last, job.encoding)
         encoder.encode(test_log, job.encoding)
+        encoder.encode(test_first, job.encoding)
+        encoder.encode(test_last, job.encoding)
 
         return encoder
 
@@ -192,9 +216,11 @@ def get_encoded_logs(job: Job, use_cache: bool = True) -> (DataFrame, DataFrame)
                 logger.info('\t\tError pre-labeled cache invalidated!')
                 return get_encoded_logs(job, use_cache)
         else:
+
             if job.split.train_log is not None and \
                job.split.test_log is not None and \
                LoadedLog.objects.filter(split=job.split).exists():
+                #passa di qua: carica i df
                 try:
                     training_log, test_log, additional_columns = get_loaded_logs(job.split)
                 except FileNotFoundError:  # cache invalidation
@@ -202,6 +228,7 @@ def get_encoded_logs(job: Job, use_cache: bool = True) -> (DataFrame, DataFrame)
                     logger.info('\t\tError pre-loaded cache invalidated!')
                     return get_encoded_logs(job, use_cache)
             else:
+                print("PROVA3")
                 training_log, test_log, additional_columns = get_train_test_log(job.split)
                 if job.split.type == SplitTypes.SPLIT_SINGLE.value:
                     search_for_already_existing_split = Split.objects.filter(
@@ -242,13 +269,15 @@ def get_encoded_logs(job: Job, use_cache: bool = True) -> (DataFrame, DataFrame)
 
                 put_loaded_logs(job.split, training_log, test_log, additional_columns)
 
-            training_df, test_df = encode_label_logs(
+            #print("PROVA4")
+            training_df_first,training_df_last,test_df_first,test_df_last = encode_label_logs(
                 training_log,
                 test_log,
                 job,
                 additional_columns=additional_columns)
-            put_labelled_logs(job, training_df, test_df)
+            put_labelled_logs(job, training_df_first, test_df_first)
     else:
+        #print("PROVA5")
         training_log, test_log, additional_columns = get_train_test_log(job.split)
         training_df, test_df = encode_label_logs(training_log, test_log, job, additional_columns=additional_columns)
-    return training_df, test_df
+    return training_df_first,training_df_last,test_df_first,test_df_last

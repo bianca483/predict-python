@@ -31,3 +31,6 @@ dump.rdb
 .coverage
 /docs/build/
 docs/source/_templates/
+
+venv/
+DUMP_RESULTS.csv

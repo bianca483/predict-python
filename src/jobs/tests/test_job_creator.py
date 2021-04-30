@@ -243,6 +243,7 @@ class TestJobCreator(TestCase):
         self.assertDictEqual(job.labelling.to_dict(), generated_job.labelling.to_dict())
 
     def test_update(self):
+        print("test_update")
         job = create_test_job()
         prediction_task(job.id)
 

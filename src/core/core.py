@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def calculate(job: Job) -> (dict, dict): #TODO dd filter for 'valid' configurations
+    print("CALCULATE")
     """main entry point for calculations
 
     encodes the logs based on the given configuration and runs the selected task
@@ -36,6 +37,7 @@ def calculate(job: Job) -> (dict, dict): #TODO dd filter for 'valid' configurati
 
 
 def run_by_type(training_df: DataFrame, test_df: DataFrame, job: Job) -> (dict, dict):
+
     """runs the specified training/evaluation run
 
     :param training_df: training DataFrame
@@ -106,6 +108,7 @@ def runtime_calculate(job: Job) -> dict:
     :param job: job idctionary
     :return: runtime results
     """
+    print("runtime_calculate")
 
     training_df, test_df = get_encoded_logs(job)
     data_df = pd.concat([training_df,test_df])

@@ -24,10 +24,27 @@ def last_payload(log: EventLog, log2: EventLog, labelling: Labelling, encoding: 
 
 def _encode_complex_latest(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict,
                            column_fun: Callable, data_fun: Callable) -> DataFrame:
-    max_prefix_length = get_max_prefix_length(log, log2, encoding.prefix_length)
+
+    print(additional_columns)
+    max_prefix_length, max_length = get_max_prefix_length(log, log2, encoding.prefix_length)
+
+    lung_last = max_length - max_prefix_length
+    print(lung_last)
+
+
     columns = column_fun(max_prefix_length, additional_columns)
+    columns_init=columns.copy()
+    columns_init.pop(0)
+
+    #print("columns_init")
+    #print(columns_init)
+
     normal_columns_number = len(columns)
-    columns = compute_label_columns(columns, encoding, labelling)
+    columns_label = compute_label_columns(columns, encoding, labelling,lenth=0)
+
+
+
+    #print(columns)
     encoded_data = []
 
     kwargs = get_intercase_attributes(log, encoding)
@@ -39,15 +56,35 @@ def _encode_complex_latest(log: EventLog, log2: EventLog, labelling: Labelling, 
         if encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
             for i in range(1, min(prefix_length + 1, len(trace) + 1)):
                 encoded_data.append(
-                    _trace_to_row(trace, encoding, labelling, i, data_fun, normal_columns_number,
+                    _trace_to_row(lung_last, trace, encoding, labelling, i, data_fun, normal_columns_number,
                                   additional_columns=additional_columns,
                                   atr_classifier=labelling.attribute_name, **kwargs))
         else:
             encoded_data.append(
-                _trace_to_row(trace, encoding, labelling, prefix_length, data_fun, normal_columns_number,
+                _trace_to_row(lung_last, trace, encoding, labelling, prefix_length, data_fun, normal_columns_number,
                               additional_columns=additional_columns,
                               atr_classifier=labelling.attribute_name, **kwargs))
-    return pd.DataFrame(columns=columns, data=encoded_data)
+
+            #print(_trace_to_row(lung_last, trace, encoding, labelling, prefix_length, data_fun, normal_columns_number,
+            #                    additional_columns=additional_columns,atr_classifier=labelling.attribute_name,
+            #                    **kwargs))
+
+
+    columns_tot= column_fun(max_prefix_length, additional_columns)
+    columns_tot= compute_label_columns(columns_tot, encoding, labelling,lenth=lung_last)
+
+    full_df = pd.DataFrame(columns=columns_tot, data=encoded_data)
+    print("STAMPA I TRE")
+    print(full_df)
+
+    first_df=full_df[columns_label] #prendo da trace_id fino a label
+    print(first_df)
+
+    last_df= full_df.drop(columns_init,axis=1)#
+    print(last_df)
+
+
+    return full_df,first_df,last_df
 
 
 def _columns_complex(prefix_length: int, additional_columns: dict) -> list:
@@ -69,24 +106,40 @@ def _columns_last_payload(prefix_length: int, additional_columns: dict) -> list:
         columns.append(additional_column + "_" + str(i))
     return columns
 
-
+#ata_fun
 def _data_complex(trace: Trace, prefix_length: int, additional_columns: dict) -> list:
     """Creates list in form [1, value1, value2, 2, ...]
 
     Appends values in additional_columns
     """
-    data = [trace.attributes.get(att, 0) for att in additional_columns['trace_attributes']]
-    for idx, event in enumerate(trace):
-        if idx == prefix_length:
-            break
-        event_name = event["concept:name"]
-        data.append(event_name)
 
-        for att in additional_columns['event_attributes']:
-            data.append(event.get(att, '0'))
+    data_first = [trace.attributes.get(att, 0) for att in additional_columns['trace_attributes']]
+    data_last = []
 
-    return data
+    #print("prefix")
+    #print(prefix_length) #è il 70% della traccia corrente
 
+    #print("trace")
+    #print(trace)
+
+    for idx, event in enumerate(trace):#idx parte da zero
+        if idx < prefix_length:
+            event_name = event["concept:name"] #prendo il nome dell'evento, quindi l'item
+            data_first.append(event_name)
+
+            for att in additional_columns['event_attributes']: #per ogni elemento in event_attributes, prendo il
+                data_first.append(event.get(att, '0'))
+
+        if idx>=prefix_length:
+            event_name = event[ "concept:name" ]
+            data_last.append(event_name)
+
+    #print("data")
+    #print(data_first)
+
+    #per ogni traccia prendo tutte le informazioni corrispondenti informazioni per il 70%, a cui devo aggiungere
+    # anche le labels
+    return data_first,data_last
 
 def _data_last_payload(trace: list, prefix_length: int, additional_columns: dict) -> list:
     """Creates list in form [1, 2, value1, value2,]
@@ -96,6 +149,7 @@ def _data_last_payload(trace: list, prefix_length: int, additional_columns: dict
     """
     data = list()
     for idx, event in enumerate(trace):
+
         if idx == prefix_length:
             break
         event_name = event['concept:name']
@@ -111,15 +165,28 @@ def _data_last_payload(trace: list, prefix_length: int, additional_columns: dict
     return data
 
 
-def _trace_to_row(trace: Trace, encoding: Encoding, labelling: Labelling, event_index: int, data_fun: Callable,
+def _trace_to_row(lung_last, trace: Trace, encoding: Encoding, labelling: Labelling, event_index: int,
+                  data_fun: Callable,
                   columns_len: int,
                   atr_classifier=None, executed_events=None, resources_used=None, new_traces=None,
                   additional_columns: dict = None) -> list:
-    trace_row = [trace.attributes["concept:name"]]
+
+    trace_row = [trace.attributes["concept:name"]]# id trace
     # prefix_length - 1 == index
-    trace_row += data_fun(trace, event_index, additional_columns)
+    trace_first,trace_last= data_fun(trace, event_index, additional_columns)
+    #print("OK")
+
+    trace_row += trace_first
     if encoding.padding or encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
         trace_row += [0 for _ in range(len(trace_row), columns_len)]
-    trace_row += add_labels(encoding, labelling, event_index, trace, attribute_classifier=atr_classifier,
-                            executed_events=executed_events, resources_used=resources_used, new_traces=new_traces)
+
+    if encoding.padding or encoding.task_generation_type == TaskGenerationTypes.ALL_IN_ONE.value:
+        trace_last += [0 for _ in range(len(trace_last), lung_last)]
+
+    #trace_row += add_labels(encoding, labelling, event_index, trace, attribute_classifier=atr_classifier,
+    # executed_events=executed_events, resources_used=resources_used, new_traces=new_traces)
+
+    trace_row += trace_last
+
+
     return trace_row

@@ -19,7 +19,7 @@ def get_intercase_attributes(log: EventLog, encoding: Encoding):
     return kwargs
 
 
-def compute_label_columns(columns: list, encoding: Encoding, labelling: Labelling) -> list:
+def compute_label_columns(columns: list, encoding: Encoding, labelling: Labelling,lenth) -> list:
     if labelling.type == LabelTypes.NO_LABEL.value:
         return columns
     if encoding.add_elapsed_time:
@@ -32,7 +32,11 @@ def compute_label_columns(columns: list, encoding: Encoding, labelling: Labellin
         columns.append('resources_used')
     if encoding.add_new_traces:
         columns.append('new_traces')
-    columns.append('label')
+
+    if lenth==0:
+        columns.append('label')
+    else:
+        columns.extend(['label']+['label_' + str(i + 1) for i in range(1, lenth)]) #arriva fino a lenth-1
     return columns
 
 
