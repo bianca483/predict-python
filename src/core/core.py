@@ -54,6 +54,8 @@ def run_by_type(training_df: DataFrame, test_df: DataFrame, job: Job) -> (dict, 
         results = _label_task(training_df)
     elif job.type == JobTypes.UPDATE.value:
         results, model_split = MODEL[job.predictive_model.predictive_model][ModelActions.UPDATE_AND_TEST.value](training_df, test_df, job)
+    elif job.type == JobTypes.TEST.value:
+        results, model_split = MODEL[job.predictive_model.predictive_model][ModelActions.TEST.value](test_df, job)
     else:
         raise ValueError("Type {} not supported".format(job.type))
 

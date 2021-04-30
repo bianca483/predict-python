@@ -105,6 +105,32 @@ def update_and_test(training_df: DataFrame, test_df: DataFrame, job: Job):
     return results, model_split
 
 
+def test(test_df: DataFrame, job: Job):
+    #train_data = _drop_columns(training_df)
+    test_data = _drop_columns(test_df)
+
+    if list(test_data.columns.values) != job.incremental_train.encoding.features:
+        # TODO: how do I align the two feature vectors?
+        #train_data, _ = train_data.align(
+        #    pd.DataFrame(columns=job.incremental_train.encoding.features), axis=1, join='right')
+        #train_data = train_data.fillna(0)
+        test_data, _ = test_data.align(
+            pd.DataFrame(columns=job.incremental_train.encoding.features), axis=1, join='right')
+        test_data = test_data.fillna(0)
+
+    clusterer = Clustering.load_model(job)
+    models = joblib.load(job.predictive_model.model_path)
+    model_split = {ModelType.CLUSTERER.value: clusterer, ModelType.CLASSIFIER.value: models}
+
+    results_df, auc = _test(model_split, test_data, evaluation=True,
+                            is_binary_classifier=_check_is_binary_classifier(job.labelling.type))
+
+    results = _prepare_results(results_df, auc)
+
+    return results, model_split
+
+
+
 def _train(train_data: DataFrame, classifier: ClassifierMixin, clusterer: Clustering) -> dict:
     models = dict()
 
