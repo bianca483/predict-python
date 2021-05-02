@@ -12,6 +12,7 @@ ATTRIBUTE_CLASSIFIER = None
 
 
 def simple_index(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding) -> DataFrame:
+
     max_prefix_length,max_length = get_max_prefix_length(log, log2, encoding.prefix_length)
     lung_last = max_length - max_prefix_length  #lunghezza del 30%  91
     #print("max_prefix_len")
@@ -19,21 +20,16 @@ def simple_index(log: EventLog, log2: EventLog, labelling: Labelling, encoding: 
     #print(max_length) #305
 
     columns = _compute_columns(int(max_prefix_length)) #prefissi colonne delle prime parti + "trace_id"
+
     normal_columns_number = len(columns)
     #print("normal_col")
     #print(normal_columns_number)#215
-
-
-
-
 
     columns = compute_label_columns(columns, encoding, labelling,lenth=0)#aggiungo prefesso per la label
 
     encoded_data = []
     kwargs = get_intercase_attributes(log, encoding)
-
-
-    for trace in log: #per oggni traccia, quindi per ogni insieme di eventi
+for trace in log: #per oggni traccia, quindi per ogni insieme di eventi
         #pre ogni traccia mi ricavo la lunghezza 70%
         prefix_length = get_prefix_length(len(trace), encoding.prefix_length)
         #print(trace.attributes['concept:name'])

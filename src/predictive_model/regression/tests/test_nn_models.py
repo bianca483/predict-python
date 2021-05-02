@@ -50,8 +50,8 @@ class TestNNRegressor(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.SIMPLE_INDEX.value, prefix_length=2, padding=True)
         labelling = create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value)
 
-        train_df = simple_index(self.train_log, labelling, encoding)
-        test_df = simple_index(self.test_log, labelling, encoding)
+        train_df = simple_index(self.train_log, self.test_log, labelling, encoding)
+        test_df = simple_index(self.test_log, self.train_log, labelling, encoding)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
         targets_df = targets_df.values.ravel()
@@ -69,8 +69,8 @@ class TestNNRegressor(TestCase):
         encoding = create_test_encoding(value_encoding=ValueEncodings.COMPLEX.value, prefix_length=2, padding=True)
         labelling = create_test_labelling(label_type=LabelTypes.REMAINING_TIME.value)
 
-        train_df = complex(self.train_log, labelling, encoding, self.train_add_col)
-        test_df = complex(self.test_log, labelling, encoding, self.test_add_col)
+        train_df = complex(self.train_log, self.test_log, labelling, encoding, self.train_add_col)
+        test_df = complex(self.test_log, self.train_log, labelling, encoding, self.test_add_col)
 
         train_df, targets_df = self._drop_columns_and_split(train_df)
         targets_df = targets_df.values.ravel()

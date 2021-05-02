@@ -12,6 +12,7 @@ class ModelActions(Enum):
     PREDICT_PROBA = 'predict_proba'
     UPDATE_AND_TEST = 'update_and_test'
     BUILD_MODEL_AND_TEST = 'build_model_and_test'
+    TEST = 'test'
 
 
 MODEL = {
@@ -19,7 +20,8 @@ MODEL = {
         ModelActions.PREDICT.value: classification.predict,
         ModelActions.PREDICT_PROBA.value: classification.predict_proba,
         ModelActions.UPDATE_AND_TEST.value: classification.update_and_test,
-        ModelActions.BUILD_MODEL_AND_TEST.value: classification.classification
+        ModelActions.BUILD_MODEL_AND_TEST.value: classification.classification,
+        ModelActions.TEST.value: classification.test
     },
     PredictiveModels.REGRESSION.value: {
         ModelActions.PREDICT.value: regression.predict,

@@ -89,7 +89,8 @@ def generate(split, payload):
                             add_new_traces=encoding_dict.get('add_new_traces', False),
                             prefix_length=config['encoding']['prefix_length'],
                             # TODO static check?
-                            padding=True if config['encoding']['padding'] == 'zero_padding' else False,
+                            padding=True if config['encoding']['padding'] == 'zero_padding'
+                                            or config['encoding']['prefix_length'] < 1 else False,
                             task_generation_type=config['encoding'].get('generation_type', 'only_this'),
                             features=config['encoding'].get('features', [])
                         ),

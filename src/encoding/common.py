@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 def encode_label_logs(train_log: EventLog, test_log: EventLog, job: Job, additional_columns=None, encode=True):
-
     logger.info('\tDataset not found in cache, building..')
     training_log,train_first,train_last, cols = _eventlog_to_dataframe(train_log, test_log, job.encoding,
                                                                        job.labelling, additional_columns=additional_columns, cols=None)
@@ -75,8 +74,6 @@ def encode_label_logs(train_log: EventLog, test_log: EventLog, job: Job, additio
     #print("test_last")
     #print(test_last)
     test_last.to_csv('/Users/biancaciuche/PycharmProjects/test_last.csv')
-
-
 
     return train_first,train_last,test_first,test_last
 

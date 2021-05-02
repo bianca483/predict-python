@@ -24,6 +24,7 @@ def last_payload(log: EventLog, log2: EventLog, labelling: Labelling, encoding: 
 
 def _encode_complex_latest(log: EventLog, log2: EventLog, labelling: Labelling, encoding: Encoding, additional_columns: dict,
                            column_fun: Callable, data_fun: Callable) -> DataFrame:
+
     print(additional_columns)
     max_prefix_length, max_length = get_max_prefix_length(log, log2, encoding.prefix_length)
 
